@@ -1,0 +1,36 @@
+server:
+        port : 7033
+
+
+spring:
+    profiles:
+          active:
+    datasource:
+            url: jdbc:mysql://192.168.153.130:3306/lms_kc?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true
+            username: root
+            password: root
+            driverClassName: com.mysql.jdbc.Driver
+    data:
+            mongodb:
+                    host: 192.168.153.130
+                    database: test
+    redis:
+            host: 192.168.153.130
+            port: 6379
+            pool:
+                  max-idle: 8
+                  min-idle: 0
+                  max-active: 8
+                  max-wait: -1
+
+
+
+redis:
+      host: 192.168.153.130
+      port: 6379
+
+
+
+
+
+

@@ -1,0 +1,58 @@
+buildscript {
+    ext {
+        springBootVersion = '1.4.2.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://192.168.10.131:2081/nexus/content/repositories/thirdparty/"
+        }
+        maven {
+            url "http://192.168.10.131:2081/nexus/content/groups/public"
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+
+jar {
+    baseName = 'gradledemo2'
+    version = '0.0.1-SNAPSHOT'
+}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://192.168.10.131:2081/nexus/content/repositories/thirdparty/"
+    }
+    maven {
+        url "http://192.168.10.131:2081/nexus/content/groups/public"
+    }
+}
+
+
+dependencies {
+    compile('org.jasig.cas.client:cas-client-core:3.2.2')
+    compile('org.apache.httpcomponents:httpcore:4.4.5')
+    compile('org.springframework.boot:spring-boot-starter-data-redis')
+    compile('org.springframework.boot:spring-boot-starter-data-solr')
+    compile("org.springframework.boot:spring-boot-starter-data-mongodb")
+    compile('org.springframework.boot:spring-boot-starter-freemarker')
+    compile('org.mybatis.spring.boot:mybatis-spring-boot-starter:1.1.1')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-aop')
+    compile('org.springframework.boot:spring-boot-starter-jersey')
+    compile('org.springframework.boot:spring-boot-starter-jetty')
+    compile group: 'oracle.jdbc', name: 'ojdbc14', version: '10.2.0.4.0'
+    compile('mysql:mysql-connector-java')
+    compile('com.dyuproject.protostuff:protostuff-core:1.0.10')
+    compile('com.dyuproject.protostuff:protostuff-runtime:1.0.10')
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
