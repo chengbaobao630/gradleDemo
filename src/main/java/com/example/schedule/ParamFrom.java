@@ -5,10 +5,19 @@ package com.example.schedule;
  */
 public enum ParamFrom {
     PRE_METHOD,
-    HTTP_POST,
     HTTP_GET,
     PROPERTIES,
     XML,
-    STREAM
+    STREAM,
+
+    HTTP_POST {
+        public void getValue(MultiJobTask.MultiJobMethod jobMethod) {
+            MultiJobTask jobTask=new MultiJobTask(10);
+            jobTask.addMethod(jobMethod);
+            jobTask.invoke();
+
+        }
+    }
+
 
 }

@@ -2,14 +2,12 @@ package com.example.aspect.redis;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
-
-import com.example.aspect.annotation.RedisCacheable;
+import com.example.aspect.annotation.RedisCache;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -18,13 +16,11 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import redis.clients.jedis.*;
 
-import com.dyuproject.protostuff.ProtostuffIOUtil;
-import com.dyuproject.protostuff.runtime.RuntimeSchema;
+import javax.activation.DataSource;
 
 
 /**
@@ -42,7 +38,7 @@ public class RedisAspect {
 
 
     //用于redis缓存切面
-    @Pointcut("@annotation(com.example.aspect.annotation.RedisCacheable)")
+    @Pointcut("@annotation(com.example.aspect.annotation.RedisCache)")
     public void redisAspect() {
 
     }
@@ -59,22 +55,23 @@ public class RedisAspect {
         ShardedJedis jedis = getJedis();
         try {
             MethodSignature signature = (MethodSignature) pjp.getSignature();
-            RedisCacheable cacheable = signature.getMethod().getAnnotation(RedisCacheable.class);
+            RedisCache cache = signature.getMethod().getAnnotation(RedisCache.class);
             Class aClass = signature.getReturnType();
             //获取redis 类型
             RedisType redisType = getRedisType(aClass);
             //如果是泛型获取泛型类型
             String[] genericParam = getGenericParam(signature);
             //创建redis key
-            String key = getKey(pjp, cacheable);
+            String key = getKey(pjp, cache);
 
-            RedisCacheHelper redisCacheHelper = new RedisCacheHelper(jedis, key, redisType, genericParam);
-            Object result = redisCacheHelper.get();
-            if (result != null && !cacheable.forceUpdate()) {
+            RedisHandler redisHandler = new RedisHandler(jedis, key, redisType, genericParam);
+            Object result = redisHandler.get();
+            if (result != null && !cache.forceUpdate()) {
                 return result;
             }
             result = pjp.proceed();
-            redisCacheHelper.set(result, cacheable.time());
+            redisHandler.set(result, cache.time());
+
             return result;
         } finally {
             jedis.close();
@@ -97,7 +94,7 @@ public class RedisAspect {
         return redisType;
     }
 
-    private String getKey(ProceedingJoinPoint pjp, RedisCacheable cacheable) {
+    private String getKey(ProceedingJoinPoint pjp, RedisCache cacheable) {
         String key = cacheable.key();
         if (cacheable.keysufixParamIndex().length > 0) {
             Object[] args = pjp.getArgs();
@@ -117,7 +114,7 @@ public class RedisAspect {
         return types;
     }
 
-
+/*
     public static void main(String[] args) throws Throwable {
         JedisPool jedisPool = new JedisPool("192.168.153.130", 6379);
         Class aClass = Class.forName("com.alibaba.sports.wora.model.Address");
@@ -135,6 +132,6 @@ public class RedisAspect {
         } else {
         }
         System.out.println(result);
-    }
+    }*/
 
 }

@@ -24,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class ScheduledExecutorEngine {
 
-    private static Logger log= LoggerFactory.getLogger(ScheduledExecutorEngine.class);
+    private static Logger log = LoggerFactory.getLogger(ScheduledExecutorEngine.class);
 
-    private static List<Task> taskList=new CopyOnWriteArrayList();
+    private static List<Task> taskList = new CopyOnWriteArrayList();
 
-    private static List<Task> errorList=new LinkedList<>();
+    private static List<Task> errorList = new LinkedList<>();
 
     protected static void addTaskList(Task task) {
         taskList.add(task);
@@ -36,52 +36,52 @@ public class ScheduledExecutorEngine {
 
 
     @Resource(name = "scheduledExec")
-    private   ScheduledExecutorService executorService;
+    private ScheduledExecutorService executorService;
 
     private Semaphore currency;
 
     @PostConstruct
-    private  void  init(){
-        currency=new Semaphore(Math.max(1,Runtime.getRuntime().availableProcessors()));
-        executorService.scheduleWithFixedDelay(new Executor(), 60,300, TimeUnit.SECONDS);
+    private void init() {
+        currency = new Semaphore(Math.max(1, Runtime.getRuntime().availableProcessors()));
+        executorService.scheduleWithFixedDelay(new Executor(), 30, 30, TimeUnit.SECONDS);
     }
 
-    class Executor implements Runnable{
+    class Executor implements Runnable {
 
         @Override
         public void run() {
-            Iterator it=taskList.iterator();
-            while (it.hasNext()){
+            Iterator it = taskList.iterator();
+            while (it.hasNext()) {
                 Task task;
                 try {
-                     task=(Task) it.next();
+                    task = (Task) it.next();
                     taskList.remove(task);
-                    if (task.getTimes()>task.MAX_RETRY_TIMES){
+                    if (task.getTimes() > task.MAX_RETRY_TIMES) {
                         task.setStatus(TaskStatus.ABANDON);
                         errorList.add(task);
                         continue;
-                    }else {
-                        if (task.getStatus().compareTo(TaskStatus.PROCESSING)==0){
+                    } else {
+                        if (task.getStatus().compareTo(TaskStatus.PROCESSING) == 0) {
                             continue;
-                        }else if (task.getStatus().compareTo(TaskStatus.REDO)==0){
+                        } else if (task.getStatus().compareTo(TaskStatus.REDO) == 0) {
                             task.setStatus(TaskStatus.PROCESSING);
-                            log.info("task:"+task+"redo");
-                        }else {
+                            log.info("task:" + task.getTaskNum() + "redo");
+                        } else {
                             task.setStatus(TaskStatus.PROCESSING);
                         }
                     }
-                     executorService.schedule(new EngineTask(task) , task.getDelayTime(), TimeUnit.SECONDS);
+                    executorService.schedule(new EngineTask(task), task.getDelayTime(), TimeUnit.SECONDS);
                 } catch (Exception e) {
                     e.printStackTrace();
                     log.error(e.getMessage());
-                }finally {
+                } finally {
                 }
 
             }
         }
     }
 
-    class EngineTask implements Runnable{
+    class EngineTask implements Runnable {
         private Task task;
 
         public EngineTask(Task task) {
@@ -89,18 +89,23 @@ public class ScheduledExecutorEngine {
         }
 
         @Override
-            public void run() {
+        public void run() {
             try {
-                currency.tryAcquire(500, TimeUnit.MILLISECONDS);
-                log.info("task begin to start:"+task);
-                TaskProcess process= task.getProcessHandler();
-                process.process(task);
-                task.setStatus(TaskStatus.DOWN);
-            }catch (Exception e){
+                if (currency.tryAcquire(500, TimeUnit.MILLISECONDS)) {
+                    log.info("task begin to start:" + task.getTaskNum());
+                    TaskProcess process = task.getProcessHandler();
+                    process.process(task);
+                    task.setStatus(TaskStatus.DOWN);
+                } else {
+                    task.setStatus(TaskStatus.REDO);
+                    taskList.add(task);
+                    log.error("currency.tryAcquire due to error");
+                }
+            } catch (Exception e) {
                 task.setStatus(TaskStatus.REDO);
                 taskList.add(task);
-                log.error("ScheduledExecutorEngine due to error",e);
-            }finally {
+                log.error("ScheduledExecutorEngine.run due to error", e);
+            } finally {
                 task.increaseTimes();
                 currency.release();
             }

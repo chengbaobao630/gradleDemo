@@ -21,5 +21,6 @@ public interface Task {
 
     String toString();
 
+    String getTaskNum();
 
 }

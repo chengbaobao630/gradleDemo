@@ -8,13 +8,13 @@ import org.springframework.stereotype.Component;
  * Created by thinkpad on 2016/6/27.
  */
 @Component
-public class AliApiTaskProcess extends ScheduleTaskProcess {
+public class MultiJobTaskProcess extends ScheduleTaskProcess {
 
 
     @Override
     protected void processWithCustom() throws Exception {
-        if (task instanceof AliApiTask){
-            AliApiTask apiTask= (AliApiTask) task;
+        if (task instanceof MultiJobTask){
+            MultiJobTask apiTask= (MultiJobTask) task;
             apiTask.invoke();
         }
     }

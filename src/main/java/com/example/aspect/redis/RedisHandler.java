@@ -4,13 +4,16 @@ import com.dyuproject.protostuff.LinkedBuffer;
 import com.dyuproject.protostuff.ProtostuffIOUtil;
 import com.dyuproject.protostuff.Schema;
 import com.dyuproject.protostuff.runtime.RuntimeSchema;
-import com.example.exception.WoraInfo;
+import com.example.exception.ExceptionInfo;
 import com.example.exception.redis.RedisTypeNotSupportedException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.ShardedJedis;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by cheng on 2016/6/8 0008.
  */
-public class RedisCacheHelper {
+public class RedisHandler {
+
+    private static final Logger LOG= LoggerFactory.getLogger(RedisHandler.class);
 
     private ShardedJedis jedis;
 
@@ -35,7 +40,7 @@ public class RedisCacheHelper {
 
     private static final Map<String, Schema> schemaMap = new ConcurrentHashMap<>();
 
-    public RedisCacheHelper(ShardedJedis jedis, String key, RedisType redisType, String[] genericParam) throws RedisTypeNotSupportedException {
+    public RedisHandler(ShardedJedis jedis, String key, RedisType redisType, String[] genericParam) throws RedisTypeNotSupportedException {
         this.jedis = jedis;
         this.key = key;
         this.redisType = redisType;
@@ -67,7 +72,7 @@ public class RedisCacheHelper {
                 result = getCustomType();
                 break;
             default:
-                throw new RedisTypeNotSupportedException(WoraInfo.REDIS_TYPE_NOT_SUPPORT.getDescription());
+                throw new RedisTypeNotSupportedException(ExceptionInfo.REDIS_TYPE_NOT_SUPPORT.getDescription());
         }
         return result;
     }
@@ -113,7 +118,15 @@ public class RedisCacheHelper {
     }
 
     private Object getMap() throws ClassNotFoundException, RedisTypeNotSupportedException, IllegalAccessException, InstantiationException {
-        return getString();
+        try {
+            Object stringObj=getString();
+            return stringObj == null ?
+                    null : mapper.readValue((String) stringObj,Map.class);
+        } catch (IOException e) {
+            LOG.error("cast String to map due to error : " + getString());
+            return null;
+
+        }
         /*if (genericParam[0] == null || genericParam[1] == null) {
             throw new RedisTypeNotSupportedException("Map 类型需要两个泛型参数");
         }
@@ -190,7 +203,7 @@ public class RedisCacheHelper {
                 handleCustomType(o);
                 break;
             default:
-                throw new RedisTypeNotSupportedException(WoraInfo.REDIS_TYPE_NOT_SUPPORT.getDescription());
+                throw new RedisTypeNotSupportedException(ExceptionInfo.REDIS_TYPE_NOT_SUPPORT.getDescription());
         }
     }
 

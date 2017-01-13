@@ -1,7 +1,5 @@
 package com.example.domain;
 
-import javax.xml.bind.annotation.XmlType;
-
 /**
  * Created by cheng on 2016/11/10 0010.
  */

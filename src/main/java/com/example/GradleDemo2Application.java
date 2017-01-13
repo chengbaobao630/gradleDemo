@@ -1,5 +1,6 @@
 package com.example;
 
+import com.alibaba.dubbo.config.annotation.Service;
 import com.example.rest.JerseyConfig;
 import com.example.schedule.executor.CcScheduledThreadPoolExecutor;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -8,8 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.*;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedisPool;
@@ -19,6 +19,8 @@ import java.util.List;
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
+@ImportResource({"classpath:spring-dubbo.xml"})
+@ComponentScan(includeFilters = {@ComponentScan.Filter(type = FilterType.ANNOTATION,value = {Service.class})})
 public class GradleDemo2Application{
 
 	@Value("${redis.host}")
@@ -30,6 +32,7 @@ public class GradleDemo2Application{
 	public static void main(String[] args) {
 		SpringApplication.run(GradleDemo2Application.class, args);
 	}
+
 	@Bean
 	public ServletRegistrationBean jerseyServlet() {
 		ServletRegistrationBean registration = new ServletRegistrationBean(new ServletContainer(), "/rest/*");

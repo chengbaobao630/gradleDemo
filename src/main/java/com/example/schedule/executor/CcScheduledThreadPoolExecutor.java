@@ -1,5 +1,7 @@
 package com.example.schedule.executor;
 
+import org.springframework.stereotype.Component;
+
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -7,6 +9,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Created by cheng on 2016/6/13 0013.
  */
+//@Component("scheduledExec")
 public class CcScheduledThreadPoolExecutor extends ScheduledThreadPoolExecutor {
 
     public CcScheduledThreadPoolExecutor(int corePoolSize) {

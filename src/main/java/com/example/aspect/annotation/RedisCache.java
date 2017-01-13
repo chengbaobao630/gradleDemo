@@ -11,10 +11,10 @@ import java.lang.annotation.*;
 @Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface RedisCacheable {
+public @interface RedisCache {
 
     /**
-     * 还存在redis中的键
+     * 缓存在redis中的键
      * @return
      */
     String key();

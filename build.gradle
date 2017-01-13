@@ -3,13 +3,11 @@ buildscript {
         springBootVersion = '1.4.2.RELEASE'
     }
     repositories {
+        flatDir {
+            dirs 'D:\\maven\\repository'
+        }
+        mavenLocal()
         mavenCentral()
-        maven {
-            url "http://192.168.10.131:2081/nexus/content/repositories/thirdparty/"
-        }
-        maven {
-            url "http://192.168.10.131:2081/nexus/content/groups/public"
-        }
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -28,18 +26,18 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    flatDir {
+        dirs 'D:\\maven\\repository'
+    }
+    mavenLocal()
     mavenCentral()
-    maven {
-        url "http://192.168.10.131:2081/nexus/content/repositories/thirdparty/"
-    }
-    maven {
-        url "http://192.168.10.131:2081/nexus/content/groups/public"
-    }
 }
 
 
 dependencies {
-    compile('org.jasig.cas.client:cas-client-core:3.2.2')
+//    compile('org.jasig.cas.client:cas-client-core:3.2.2')
+    compile group:'cc.home', name:  'dubbo-api', version:'0.0.1-SNAPSHOT'
+    compile group:'cc.home', name:  'common-bo', version:'0.0.1-SNAPSHOT'
     compile('org.apache.httpcomponents:httpcore:4.4.5')
     compile('org.springframework.boot:spring-boot-starter-data-redis')
     compile('org.springframework.boot:spring-boot-starter-data-solr')
@@ -54,5 +52,11 @@ dependencies {
     compile('mysql:mysql-connector-java')
     compile('com.dyuproject.protostuff:protostuff-core:1.0.10')
     compile('com.dyuproject.protostuff:protostuff-runtime:1.0.10')
+//    compile('com.telecom.ctu.platform.common.ctu-framework:application-engine:2014-12-18')
+    compile('com.google.guava:guava:15.0')
+    compile('com.alibaba:dubbo:2.5.3'){
+        exclude group: 'org.springframework', module: 'spring'
+    }
+    compile 'com.github.sgroschupf:zkclient:0.1'
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }

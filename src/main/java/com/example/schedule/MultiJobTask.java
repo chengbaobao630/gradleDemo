@@ -2,6 +2,8 @@ package com.example.schedule;
 
 
 import com.example.schedule.task.ScheduleTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -12,37 +14,40 @@ import java.util.List;
 /**
  * Created by thinkpad on 2016/6/27.
  */
-public class AliApiTask extends ScheduleTask {
+public class MultiJobTask extends ScheduleTask {
 
-    private List<AliTaskMethod> methods = new ArrayList<>();
 
-    public List<AliTaskMethod> getMethods() {
+    private static final Logger LOG = LoggerFactory.getLogger(MultiJobTask.class);
+
+    private static ThreadLocal<MultiJobMethod> threadLocal
+            = new ThreadLocal<>();
+
+    private List<MultiJobMethod> methods = new ArrayList<>();
+
+    public List<MultiJobMethod> getMethods() {
         return methods;
     }
 
-    public void setMethods(List<AliTaskMethod> methods) {
+    public void setMethods(List<MultiJobMethod> methods) {
         this.methods = methods;
     }
 
-    public void addMethod(AliTaskMethod method) {
+    public void addMethod(MultiJobMethod method) {
         this.methods.add(method);
     }
 
-    public AliApiTask(long delayTime) {
+    public MultiJobTask(long delayTime) {
         super(delayTime);
-        this.setProcessHandler();
     }
 
-    private AliTaskMethod preMethod = null;
+    private MultiJobMethod preMethod = null;
 
-    @Override
-    public void setProcessHandler() {
-//        processHandler = (TaskProcess) SpringContextUtil.getBean("aliApiTaskProcess");
-    }
+    public Object invoke() {
 
-    public void invoke() {
         Object preParam = null;
-        for (AliTaskMethod method : methods) {
+
+        Object result = null;
+        for (MultiJobMethod method : getMethods()) {
             try {
                 for (int i = 0; i < method.getParams().length; i++) {
                     if (method.getParams()[i] instanceof ParamFrom) {
@@ -52,21 +57,21 @@ public class AliApiTask extends ScheduleTask {
                         }
                     }
                 }
-                Object result = method.getMethod().invoke(method.getInvokeObject(), method.getParams());
-                method.setReturnType(result.getClass());
-                if (result != null) {
-                    preParam = result;
+                result = method.getMethod().invoke(method.getInvokeObject(), method.getParams());
+                if (result == null) {
+                    return null;
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+                method.setReturnType(result.getClass());
+                preParam = result;
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
         }
+        return result;
 
     }
 
-    class AliTaskMethod {
+    public class MultiJobMethod {
 
         private Object invokeObject;
 
@@ -80,12 +85,15 @@ public class AliApiTask extends ScheduleTask {
 
         private Class returnType;
 
-        public AliTaskMethod(Object invokeObject, String methodName, Object[] params) throws NoSuchFieldException, IllegalAccessException {
+        public MultiJobMethod(Object invokeObject, String methodName, Object[] params) throws NoSuchFieldException, IllegalAccessException {
             this.invokeObject = invokeObject;
             this.methodName = methodName;
             this.params = params;
             Class[] classes = new Class[params.length];
             for (int a = 0; a < params.length; a++) {
+                if (params[a] == null) {
+                    continue;
+                }
                 Class clazz = params[a].getClass();
                 if (params[a].getClass().isPrimitive()) {
                     Field type = clazz.getDeclaredField("TYPE");
@@ -93,18 +101,22 @@ public class AliApiTask extends ScheduleTask {
                 }
                 if (params[a] instanceof ParamFrom) {
                     if (ParamFrom.PRE_METHOD.compareTo((ParamFrom) params[a]) == 0) {
-                     clazz = preMethod.getReturnType();
+                        preMethod = threadLocal.get();
+                        if (preMethod == null) {
+                            LOG.error("preMethod must not be null");
+                        }
+                        clazz = preMethod.getReturnType();
                     }
                 }
                 classes[a] = clazz;
             }
             try {
                 this.method = invokeObject.getClass().getDeclaredMethod(methodName, classes);
-                this.returnType=method.getReturnType();
+                this.returnType = method.getReturnType();
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             } finally {
-                preMethod = this;
+                threadLocal.set(this);
             }
         }
 
@@ -153,5 +165,6 @@ public class AliApiTask extends ScheduleTask {
             this.returnType = returnType;
         }
     }
+
 
 }
